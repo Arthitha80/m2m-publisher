@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MQTT Publisher - RTC/CBLOCK</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js" type="text/javascript"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f9; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        input, button { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #2ecc71; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #27ae60; }
+        #status { font-size: 0.9em; color: #666; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>HiveMQ Publisher</h2>
+    <div id="status">Status: Disconnected</div>
+    
+    <label for="subtopic">Sub-topic (rtc/cblock/<u>...</u>):</label>
+    <input type="text" id="subtopic" placeholder="e.g., 1 or sensor" value="1">
+    
+    <label for="message">Message:</label>
+    <input type="text" id="message" placeholder="Type your message here..." value="Hello from Web!">
+    
+    <button onclick="publishMessage()">Publish Message</button>
+</div>
+
+<script>
+    // Broker configuration
+    const host = "broker.hivemq.com";
+    const port = 8883; // WebSocket port
+    const clientId = "web_client_" + Math.random().toString(16).substr(2, 8);
+
+    // Initialize the client
+    const client = new Paho.MQTT.Client(host, port, clientId);
+
+    // Set callback handlers
+    client.onConnectionLost = onConnectionLost;
+
+    // Connect the client
+    client.connect({
+        onSuccess: onConnect,
+        useSSL: false // Change to true if using port 8884
+    });
+
+    function onConnect() {
+        document.getElementById("status").innerText = "Status: Connected to " + host;
+        document.getElementById("status").style.color = "green";
+    }
+
+    function onConnectionLost(responseObject) {
+        document.getElementById("status").innerText = "Status: Connection Lost";
+        document.getElementById("status").style.color = "red";
+    }
+
+    function publishMessage() {
+        const subtopic = document.getElementById("subtopic").value;
+        const payload = document.getElementById("message").value;
+        const fullTopic = "rtc/cblock/" + subtopic;
+
+        if (client.isConnected()) {
+            const message = new Paho.MQTT.Message(payload);
+            message.destinationName = fullTopic;
+            client.send(message);
+            console.log("Published to " + fullTopic + ": " + payload);
+            alert("Sent: " + payload + " to " + fullTopic);
+        } else {
+            alert("Not connected to broker.");
+        }
+    }
+</script>
+
+</body>
+</html>
